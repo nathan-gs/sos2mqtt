@@ -107,7 +107,7 @@ mqtt_publish() {
   payload=$2  
   if [ "$USE_MQTT" = true ];
   then
-    mosquitto_pub --host $MQTT_HOST --username "$MQTT_USER" --pw "$MQTT_PASSWORD" --retain -t "$topic" -m "$payload"
+    mosquitto_pub --host "$MQTT_HOST" --username "$MQTT_USER" --pw "$MQTT_PASSWORD" --retain -t "$topic" -m "$payload" || warn "mqtt_publish failed for topic: $topic"
   fi
 }
 
@@ -123,7 +123,7 @@ mqtt_publish_ha_discovery() {
   fi
 
   global_sensor_prefix=${MQTT_TOPIC_PREFIX%/}
-  
+
   topic="homeassistant/sensor/${global_sensor_prefix}_${station}_${phenomenon}/config"
 
   if [ ${#device_class} -gt 1 ];
@@ -136,14 +136,15 @@ mqtt_publish_ha_discovery() {
   payload=$(cat <<PLEOL
   {
     "device": {
-      "name": "${MQTT_TOPIC_PREFIX}${station}/${phenomenon}",
+      "name": "${global_sensor_prefix}_${station}_${phenomenon}",
       "identifiers": ["${global_sensor_prefix}_${station}_${phenomenon}"]
     },
-    "object_id": "${MQTT_TOPIC_PREFIX}${station}/${phenomenon}",
+    "unique_id": "${global_sensor_prefix}_${station}_${phenomenon}",
+    "object_id": "${global_sensor_prefix}_${station}_${phenomenon}",
     "state_topic": "${MQTT_TOPIC_PREFIX}${station}/${phenomenon}",
     "state_class": "measurement",
     "json_attributes_topic": "${MQTT_TOPIC_PREFIX}${station}/${phenomenon}",
-    "unit_of_measurement": "${unit}",
+    "unit_of_measurement": "${unit_of_measurement}",
     ${device_class_str}
     "value_template": "{{ value_json.${phenomenon} }}"
   }
